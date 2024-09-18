@@ -1,6 +1,4 @@
-resource "random_pet" "cluster_name" {
-  length = 2
-}
+
 
 resource "rancher2_machine_config_v2" "nodes" {
   for_each      = var.node
@@ -9,14 +7,10 @@ resource "rancher2_machine_config_v2" "nodes" {
   vsphere_config {
     cfgparam   = ["disk.enableUUID=TRUE"] # Disk UUID is Required for vSphere Storage Provider
     clone_from = var.vsphere_env.cloud_image_name
-    cloud_config = templatefile("${path.cwd}/files/user_data_${each.key}.tftmpl",
-      {
-        ssh_user       = "rancher",
-        ssh_public_key = file("${path.cwd}/files/.ssh-public-key", )
-    }) # End of templatefile
     content_library = var.vsphere_env.library_name
-    cpu_count       = each.value.vcpu
-    creation_type   = "library"
+    cpu_count       = each.value.cpu_count
+    creation_type   = "template"
+    folder          = var.vsphere_env.folder
     datacenter      = var.vsphere_env.datacenter
     datastore       = var.vsphere_env.datastore
     disk_size       = each.value.hdd_capacity
@@ -30,15 +24,9 @@ resource "rancher2_cluster_v2" "rke2" {
   annotations        = var.rancher_env.cluster_annotations
   kubernetes_version = var.rancher_env.rke2_version
   labels             = var.rancher_env.cluster_labels
-  name               = random_pet.cluster_name.id
+  name               = var.rancher_env.cluster_name
 
   rke_config {
-    additional_manifest = templatefile("${path.cwd}/files/additional_manifests.tftmpl", {
-      kube_vip_rbac    = data.http.kube_vip_rbac.response_body
-      kube_vip_version = jsondecode(data.http.kube_vip_version.response_body)["tag_name"]
-      load_balancer_ip = var.kubevip.load_balancer_ip
-    })
-
     chart_values = <<EOF
       rancher-vsphere-cpi:
         vCenter:
@@ -47,13 +35,7 @@ resource "rancher2_cluster_v2" "rke2" {
           insecureFlag: true
           datacenters: ${var.vsphere_env.datacenter}
           username: ${var.vsphere_env.user}
-          password: ${file("${path.cwd}/files/.vsphere-passwd")}
-          credentialsSecret:
-            name: "vsphere-cpi-creds"
-            generate: true
-        cloudControllerManager:
-          nodeSelector:
-            node-role.kubernetes.io/control-plane: 'true'
+          password: ${var.vsphere_env.pass}
 
       rancher-vsphere-csi:
         vCenter:
@@ -62,13 +44,7 @@ resource "rancher2_cluster_v2" "rke2" {
           insecureFlag: "1"
           datacenters: ${var.vsphere_env.datacenter}
           username: ${var.vsphere_env.user}
-          password: ${file("${path.cwd}/files/.vsphere-passwd")}
-          configSecret:
-            name: "vsphere-config-secret"
-            generate: true
-        csiNode:
-          nodeSelector: 
-            node-role.kubernetes.io/worker: 'true'
+          password: ${var.vsphere_env.pass}  
         storageClass:
           allowVolumeExpansion: true
           datastoreURL: ${var.vsphere_env.ds_url}
