@@ -53,17 +53,7 @@ resource "rancher2_cluster_v2" "rke2" {
         felixConfiguration:
           wireguardEnabled: true
           
-      rke2-ingress-nginx:
-        controller:
-          config:
-            ssl-protocols: "TLSv1.2 TLSv1.3"
-          extraEnvs:
-            - name: OPENSSL_FIPS
-              value: "1"  
-          publishService:
-            enabled: true
-          service:
-            enabled: true
+  
     EOF
 
     machine_global_config = <<EOF
@@ -74,7 +64,7 @@ resource "rancher2_cluster_v2" "rke2" {
     dynamic "machine_pools" {
       for_each = var.node
       content {
-        cloud_credential_secret_name = data.rancher2_cloud_credential.auth.id
+        cloud_credential_secret_name = data.rancher2_cloud_credential.cloud_credential.id
         control_plane_role           = machine_pools.key == "ctl_plane" ? true : false
         etcd_role                    = machine_pools.key == "ctl_plane" ? true : false
         name                         = machine_pools.value.name
@@ -87,11 +77,15 @@ resource "rancher2_cluster_v2" "rke2" {
         }
       } # End of dynamic for_each content
     }   # End of machine_pools
-
+    
     machine_selector_config {
       config = {
         cloud-provider-name     = "rancher-vsphere"
+        protect-kernel-defaults: false
       }
     } # End machine_selector_config
   }   # End of rke_config
 }     # End of rancher2_cluster_v2
+data "rancher2_cloud_credential" "cloud_credential" {
+  name = var.vsphere_env.rancher2_cloud_credential_name
+}
