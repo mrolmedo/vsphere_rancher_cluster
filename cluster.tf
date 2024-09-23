@@ -1,13 +1,11 @@
 
-
 resource "rancher2_machine_config_v2" "nodes" {
   for_each      = var.node
   generate_name = replace(each.value.name, "_", "-")
 
   vsphere_config {
     cfgparam   = ["disk.enableUUID=TRUE"] # Disk UUID is Required for vSphere Storage Provider
-    clone_from = var.vsphere_env.cloud_image_name
-    content_library = var.vsphere_env.library_name
+    clone_from      = var.vsphere_env.template
     cpu_count       = each.value.cpu_count
     creation_type   = "template"
     folder          = var.vsphere_env.folder
@@ -15,7 +13,6 @@ resource "rancher2_machine_config_v2" "nodes" {
     datastore       = var.vsphere_env.datastore
     disk_size       = each.value.hdd_capacity
     memory_size     = each.value.vram
-    network         = var.vsphere_env.vm_network
     vcenter         = var.vsphere_env.server
   }
 } # End of rancher2_machine_config_v2
@@ -48,18 +45,13 @@ resource "rancher2_cluster_v2" "rke2" {
         storageClass:
           allowVolumeExpansion: true
           datastoreURL: ${var.vsphere_env.ds_url}
-
-      rke2-calico:
-        felixConfiguration:
-          wireguardEnabled: true
-          
-  
     EOF
 
     machine_global_config = <<EOF
       cni: calico
       disable-kube-proxy: false
       etcd-expose-metrics: false
+    EOF
 
     dynamic "machine_pools" {
       for_each = var.node
@@ -87,5 +79,5 @@ resource "rancher2_cluster_v2" "rke2" {
   }   # End of rke_config
 }     # End of rancher2_cluster_v2
 data "rancher2_cloud_credential" "cloud_credential" {
-  name = var.vsphere_env.rancher2_cloud_credential_name
+  name = molmedo
 }
