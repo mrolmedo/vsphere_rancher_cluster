@@ -1,4 +1,3 @@
-
 resource "rancher2_machine_config_v2" "nodes" {
   for_each      = var.node
   generate_name = replace(each.value.name, "_", "-")
@@ -6,7 +5,7 @@ resource "rancher2_machine_config_v2" "nodes" {
   vsphere_config {
     cfgparam   = ["disk.enableUUID=TRUE"] # Disk UUID is Required for vSphere Storage Provider
     clone_from      = var.vsphere_env.template
-    cpu_count       = each.value.cpu_count
+    cpu_count       = each.value.vcpu
     creation_type   = "template"
     folder          = var.vsphere_env.folder
     datacenter      = var.vsphere_env.datacenter
@@ -21,10 +20,11 @@ resource "rancher2_cluster_v2" "rke2" {
   annotations        = var.rancher_env.cluster_annotations
   kubernetes_version = var.rancher_env.rke2_version
   labels             = var.rancher_env.cluster_labels
-  name               = var.rancher_env.cluster_name
+  name               = "molmedotf"
 
   rke_config {
     chart_values = <<EOF
+      rke2-calico: {}
       rancher-vsphere-cpi:
         vCenter:
           host: ${var.vsphere_env.server}
@@ -41,7 +41,7 @@ resource "rancher2_cluster_v2" "rke2" {
           insecureFlag: "1"
           datacenters: ${var.vsphere_env.datacenter}
           username: ${var.vsphere_env.user}
-          password: ${var.vsphere_env.pass}  
+          password: ${var.vsphere_env.pass}
         storageClass:
           allowVolumeExpansion: true
           datastoreURL: ${var.vsphere_env.ds_url}
@@ -56,7 +56,7 @@ resource "rancher2_cluster_v2" "rke2" {
     dynamic "machine_pools" {
       for_each = var.node
       content {
-        cloud_credential_secret_name = data.rancher2_cloud_credential.cloud_credential.id
+        cloud_credential_secret_name = data.rancher2_cloud_credential.auth.id
         control_plane_role           = machine_pools.key == "ctl_plane" ? true : false
         etcd_role                    = machine_pools.key == "ctl_plane" ? true : false
         name                         = machine_pools.value.name
@@ -69,15 +69,11 @@ resource "rancher2_cluster_v2" "rke2" {
         }
       } # End of dynamic for_each content
     }   # End of machine_pools
-    
+
     machine_selector_config {
-      config = {
-        cloud-provider-name     = "rancher-vsphere"
-        protect-kernel-defaults: false
-      }
+     config = jsonencode({
+        cloud-provider-name = "rancher-vsphere"
+      })
     } # End machine_selector_config
   }   # End of rke_config
 }     # End of rancher2_cluster_v2
-data "rancher2_cloud_credential" "cloud_credential" {
-  name = molmedo
-}
