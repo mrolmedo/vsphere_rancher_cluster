@@ -28,6 +28,5 @@ variable "vsphere_env" {
     user             = string
     folder           = string
     pass             = string
-    rancher2_cloud_credential_name = string
   })
 }
