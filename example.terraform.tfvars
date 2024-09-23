@@ -1,3 +1,4 @@
+
 rancher_env = {
   cluster_annotations = { "foo" = "bar" }
   cluster_labels      = { "rke2" = "tf" }
