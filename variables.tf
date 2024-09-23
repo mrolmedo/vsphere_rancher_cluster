@@ -1,9 +1,3 @@
-variable "kubevip" {
-  description = "IP pool for kube-vip L2 Configuration"
-  type = object({
-    load_balancer_ip = string
-  })
-}
 
 variable "node" {
   description = "Properties for MachinePool node types"
@@ -26,13 +20,14 @@ variable "rancher_env" {
 variable "vsphere_env" {
   description = "Variables for vSphere environment"
   type = object({
-    cloud_image_name = string
+    template         = string
     datacenter       = string
     datastore        = string
     ds_url           = string
-    library_name     = string
     server           = string
     user             = string
-    vm_network       = list(string)
+    folder           = string
+    pass             = string
+    rancher2_cloud_credential_name = string
   })
 }
