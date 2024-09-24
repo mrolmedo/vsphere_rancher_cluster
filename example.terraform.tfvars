@@ -8,7 +8,7 @@ rancher_env = {
 
 # These are machine specs for nodes.  Be mindful of System Requirements!
 node = {
-  ctl_plane = { hdd_capacity = 20000, name = "ctl-plane", quantity = 1, vcpu = 2, vram = 2048 }
+  ctl_plane = { hdd_capacity = 20000, name = "ctl-plane", quantity = 1, vcpu = 2, vram = 4096 }
   worker    = { hdd_capacity = 20000, name = "worker", quantity = 1, vcpu = 2, vram = 2048 }
 }
 
