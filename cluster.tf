@@ -21,6 +21,8 @@ resource "rancher2_cluster_v2" "rke2" {
   kubernetes_version = var.rancher_env.rke2_version
   labels             = var.rancher_env.cluster_labels
   name               = "molmedotf"
+  ##add spec cluster cloud credential
+  cloud_credential_secret_name = data.rancher2_cloud_credential.auth.id
 
   rke_config {
     chart_values = <<EOF
