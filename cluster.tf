@@ -5,6 +5,11 @@ resource "rancher2_machine_config_v2" "nodes" {
   vsphere_config {
     cfgparam   = ["disk.enableUUID=TRUE"] # Disk UUID is Required for vSphere Storage Provider
     clone_from      = var.vsphere_env.template
+    cloud_config = templatefile("${path.cwd}/files/user_data_${each.key}.tftmpl",
+      {
+        ssh_user       = "rancher",
+        ssh_public_key = file("${path.cwd}/files/.ssh-public-key", )
+    }) # End of templatefile
     cpu_count       = each.value.vcpu
     creation_type   = "template"
     folder          = var.vsphere_env.folder
