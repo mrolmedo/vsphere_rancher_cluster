@@ -75,6 +75,7 @@ resource "rancher2_cluster_v2" "rke2" {
     machine_selector_config {
      config = jsonencode({
         cloud-provider-name = "rancher-vsphere"
+        profile                 = "cis"
       })
     } # End machine_selector_config
   }   # End of rke_config
